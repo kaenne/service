@@ -1,20 +1,56 @@
 package com.example.service
 
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.os.Bundle
-import androidx.activity.enableEdgeToEdge
+import android.widget.Button
+import android.widget.EditText
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 
 class MainActivity : AppCompatActivity() {
+
+    private lateinit var randomCharacterEditText: EditText
+    private lateinit var serviceIntent: Intent
+    private val broadcastReceiver = MyBroadcastReceiver()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
         setContentView(R.layout.activity_main)
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
+
+        randomCharacterEditText = findViewById(R.id.editText_randomCharacter)
+        serviceIntent = Intent(this, RandomCharacterService::class.java)
+
+        findViewById<Button>(R.id.button_start).setOnClickListener {
+            startService(serviceIntent)
+        }
+
+        findViewById<Button>(R.id.button_end).setOnClickListener {
+            stopService(serviceIntent)
+            randomCharacterEditText.setText("")
+        }
+
+        findViewById<Button>(R.id.button_to_foreground).setOnClickListener {
+            startActivity(Intent(this, ForegroundServiceActivity::class.java))
+        }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        val filter = IntentFilter("my.custom.action.tag.lab8")
+        registerReceiver(broadcastReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
+    }
+
+    override fun onStop() {
+        super.onStop()
+        unregisterReceiver(broadcastReceiver)
+    }
+
+    inner class MyBroadcastReceiver : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            val data = intent?.getCharExtra("randomCharacter", '?')
+            randomCharacterEditText.setText(data.toString())
         }
     }
 }
